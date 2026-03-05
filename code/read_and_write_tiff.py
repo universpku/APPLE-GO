@@ -9,7 +9,6 @@ def WriteGTiffFile(filename,band, nRows, nCols, data, geotrans, proj, noDataValu
         ds.SetGeoTransform(geotrans)
     if(proj!="  "):
         ds.SetProjection(proj)
-    # outband.FlushCache()
     if(data.ndim==2):
         data=data.reshape(1,data.shape[0],data.shape[1])
     for i in range(1,band+1):
@@ -23,8 +22,6 @@ def read_tiff(inpath):
     col = ds.RasterXSize  # 获取列数
     band = ds.RasterCount  # 获取波段数
     data = ds.ReadAsArray(0, 0, col, row)  # 获取数据
-    # print(data.shape)
-    # print(data)
     return data
 
 

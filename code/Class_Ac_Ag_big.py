@@ -16,46 +16,6 @@ class Ac_Ag_big_nn_tensor(nn.Module):
         self.block_size_y=block_size_y
         self.G = g
 
-    def old_forward(self,input_tensor):
-    # def forward(self, input_tensor):
-        '''
-        计算Ac_big的函数
-        :param input_tenser: 需要是一个[4,n,n]的张量，第一个通道是CHM，第二个通道是PATH, 第三个通道是FAVD, 第四个通道是PATH2
-        :return: 第一个通道，Ac，第二个通道Ag
-        '''
-        # print("input_tensor[3,7,49]", input_tensor[3, 7, 49])
-        input_tensor[input_tensor < 0] = 0
-        input_tensor[1,:,:][input_tensor[1,:,:]>0]=-1
-        input_tensor[1, :, :] += 1
-        result_tensor = torch.zeros([2, input_tensor.shape[1], input_tensor.shape[2]])
-        result_tensor[0, :, :] = input_tensor[0, :, :] * input_tensor[1, :, :]
-
-        input_tensor[0, :, :][input_tensor[0, :, :] > 0] = -1
-        input_tensor[0, :, :] += 1
-        result_tensor[1, :, :] = input_tensor[0, :, :] * input_tensor[1, :, :]
-
-        result_tensor[result_tensor>0]=1
-        # print("result_tensor.shape",result_tensor.shape)
-        # return result_tensor
-
-        mid_tensor = result_tensor.clone()
-        result_tensor=result_tensor*input_tensor[2,:,:]*self.G*(-1)
-        result_tensor = result_tensor * input_tensor[3, :, :]
-        result_tensor=torch.exp(result_tensor)
-        result_tensor=result_tensor*mid_tensor
-
-
-
-        num_block_x = int(input_tensor.shape[1] / self.block_size_x)
-        num_block_y = int(input_tensor.shape[2] / self.block_size_y)
-        # print("input_tensor[3,7,49]", input_tensor[3, 7, 49])
-        # print("result_tensor[0,7,49]",result_tensor[0,7,49])
-
-        result_tensor = result_tensor.reshape(2, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(
-            dim=(2, 4))/(mid_tensor.reshape(2, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(
-            dim=(2, 4))+1e-8)
-
-        return result_tensor
 
     def forward(self, input_tensor):
         '''
@@ -92,14 +52,9 @@ class Ac_Ag_big_nn_tensor(nn.Module):
         tensor = torch.stack([ch0, ch1], dim=0)  # [2,H,W]
         mid_tensor = torch.where(tensor > 0, 1.0, 0.0)  # 独立处理每个通道
 
-        # print("mid_tensor.shape", mid_tensor.shape)
-        # return mid_tensor
-
         # 步骤7：核心公式计算
         result_tensor = mid_tensor * input_clean[2] * self.G * (-1) * input_clean[3]
         result_tensor = torch.exp(result_tensor) * mid_tensor
-        # print("Ac_Ag_big_nn_tensor",result_tensor.shape)
-        # print(mid_tensor[1,7*30:8*30,18*30:19*30])
 
         # 分块聚合计算
         num_block_x = input_clean.shape[1] // self.block_size_x
@@ -118,12 +73,6 @@ class Ac_Ag_big_nn_tensor(nn.Module):
         numerator = block_aggregate(result_tensor)
         denominator = block_aggregate(mid_tensor) + 1e-8
 
-        # 这段是20250713新加的，还要详细考虑一下
-        # def block_aggregate_mid_tensor(tensor):
-        #     return tensor.view(
-        #         num_block_x, self.block_size_x,
-        #         num_block_y, self.block_size_y
-        #     ).sum(dim=(1, 3))  # 聚合空间维度
 
         mid_tensor2 = block_aggregate(mid_tensor)
         mid_tensor3= torch.where(mid_tensor2 > 0, torch.tensor(0.0, device=input_tensor.device), torch.tensor(1.0, device=input_tensor.device))

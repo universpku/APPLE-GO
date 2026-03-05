@@ -13,14 +13,10 @@ class cal_SF_mulband(nn.Module):
         self.bandnum=bandnum
         x_list=torch.arange(np.pi/2/size_x/2,np.pi/2,np.pi/2/size_x)
         y_list=torch.arange(np.pi/size_y,2*np.pi,2*np.pi/size_y)
-        # x_list = torch.arange(0, np.pi / 2+1e-8, np.pi / 2 / size_x)
-        # y_list = torch.arange(0, 2 * np.pi+1e-8, 2 * np.pi / size_y)
         x_list = x_list.reshape(-1, 1)
         y_list = y_list.reshape(1, -1)
         sin_x=torch.sin(x_list)
         cos_x=torch.cos(x_list)
-        # print("sin_x",sin_x)
-        # print("cos_x",cos_x)
         sin_y=torch.sin(y_list)
         cos_y=torch.cos(y_list)
         self.cal_tensor_1=sin_x*cos_x*sin_x*cos_y
@@ -49,16 +45,9 @@ class cal_SF_mulband(nn.Module):
         result_tensor=self.cal_tensor_1*sin_sza*cos_saa+self.cal_tensor_2*sin_sza*sin_saa+self.cal_tensor_3*cos_sza
         result_tensor_1=torch.max(result_tensor,torch.zeros_like(result_tensor)).unsqueeze(2)
         result_tensor_2=torch.max(-result_tensor,torch.zeros_like(result_tensor)).unsqueeze(2)
-        # print(result_tensor_1.shape)
-        # print(result_tensor_2.shape)
-        # print("result_tensor_1",result_tensor_1.sum(dim=(0,1)))
-        # print("result_tensor_2",result_tensor_2.sum(dim=(0,1)))
-
-        # result_tensor=result_tensor_1*input_tensor[2+self.bandnum:2+self.bandnum*2,:,:]+result_tensor_2*input_tensor[2:2+self.bandnum,:,:]
         result_tensor = result_tensor_2 * input_tensor[2 + self.bandnum:2 + self.bandnum * 2, :,
                                           :] + result_tensor_1 * input_tensor[2:2 + self.bandnum, :, :]
 
-        # print(result_tensor.shape)
         result_tensor=result_tensor.sum(dim=(0,1))/ 2 * np.pi/result_tensor.shape[0]/result_tensor.shape[1]
-        #
+        
         return result_tensor

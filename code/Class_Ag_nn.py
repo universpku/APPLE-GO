@@ -16,25 +16,6 @@ class Ag_nn_tensor(nn.Module):
         self.block_size_x=block_size_x
         self.block_size_y=block_size_y
 
-    def old_forward(self, input_tensor):
-    # def forward(self, input_tensor):
-        '''
-        计算Ag的函数,CHM与Path均为0的像元为Ag
-        :param input_tenser: 需要是一个[2,n,n]的张量，第一个通道是CHM，第二个通道是PATH
-        :return:
-        '''
-        input_tensor[input_tensor<0]=0
-        # 将两层的张量相加，得到一个[1,n,n]的张量
-        result_tensor=input_tensor.sum(dim=0)
-        # 将结果张量中值大于0的像元置为0，等于0的像元置为1
-        result_tensor[result_tensor>0]=-1
-        result_tensor+=1
-        num_block_x=int(input_tensor.shape[1]/self.block_size_x)
-        num_block_y=int(input_tensor.shape[2]/self.block_size_y)
-        result_tensor=result_tensor.reshape(1,num_block_x,self.block_size_x,num_block_y,self.block_size_y).sum(dim=(2,4))
-        # print(result_tensor)
-        # exit(-11)
-        return result_tensor
 
     def forward(self, input_tensor):
         '''
@@ -43,14 +24,12 @@ class Ag_nn_tensor(nn.Module):
         :return: 聚合后的结果张量 [1, num_block_x, num_block_y]
         '''
         # 替换所有原地操作为安全操作
-        # 原：input_tensor[input_tensor < 0] = 0
         input_tensor = torch.where(input_tensor < 0, 0, input_tensor)  # 创建新张量代替原地修改
 
         # 计算非原地相加
         result_tensor = input_tensor.sum(dim=0, keepdim=True)  # 保持维度 [1, H, W]
 
         # 重构条件判断逻辑
-        # 原：result_tensor[result_tensor > 0] = -1 → result_tensor += 1
         mask = (result_tensor > 0)  # 创建布尔掩码
         result_tensor = torch.where(mask,
                                     torch.tensor(-1.0, device=input_tensor.device),  # 符合条件设为-1

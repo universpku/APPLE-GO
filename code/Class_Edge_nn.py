@@ -10,22 +10,14 @@ def DecEdge_pnj(matrix):
     '''
     matrix_new=torch.Tensor(matrix.copy()).unsqueeze(0).unsqueeze(0)
     matrix_new[matrix_new>0]=1
-    # matrix = torch.Tensor(matrix)
-    # print(matrix.shape)
-    # corr2d=nn.Conv2d(1,1,kernel_size=(3,3),bias=False,stride=1,padding=1,padding_mode='circular')
     corr2d = nn.Conv2d(1, 1, kernel_size=(3, 3), bias=False, stride=1)
     corr2d.weight.data=torch.tensor([[[[1.,1,1],
                                       [1,0,1],
                                       [1,1,1]]]])
-    # corr2d.weight.data = torch.tensor([[[[1., 0, 0],
-    #                                      [0, 0, 0],
-    #                                      [0, 0, 0]]]])
-    # print(corr2d.weight.data.shape)
     matrix_torch=8-corr2d(matrix_new)
     matrix_torch[matrix_torch <= 1] = 0
     matrix_torch[matrix_torch>1]=1
     matrix_torch[matrix_new[:,:,1:-1,1:-1] == 0] = 0
-    # print(matrix_torch.shape)
     return matrix_torch.sum(),matrix_torch.detach().numpy()[0,0]
 
 class Edge_nn_tensor(nn.Module):

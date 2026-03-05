@@ -16,32 +16,6 @@ class Az_nn_tensor(nn.Module):
         self.block_size_y=block_size_y
         self.G = g
 
-    def old_forward(self, input_tensor):
-    # def forward(self, input_tensor):
-        '''
-        计算Az的函数
-        :param input_tenser: 需要是一个[3,n,n]的张量，第一个通道是CHM，第二个通道是PATH, 第三个通道是FAVD
-        :return:
-        '''
-        input_tensor[input_tensor < 0] = 0
-        result_tensor=input_tensor[1,:,:]*input_tensor[2,:,:]*self.G*-1
-        result_tensor=torch.exp(result_tensor)
-        result_tensor[input_tensor[0,:,:]>0]=0
-        result_tensor[result_tensor>=1]=0
-        cal_tensor=result_tensor.clone()
-        cal_tensor[cal_tensor==1]=0
-        cal_tensor[cal_tensor>0]=1
-        num_block_x = int(input_tensor.shape[1] / self.block_size_x)
-        num_block_y = int(input_tensor.shape[2] / self.block_size_y)
-        # print(result_tensor.reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))[:,0,0])
-        # print(
-        #     cal_tensor.reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))[:,
-        #     0, 0])
-        result_tensor = result_tensor.reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))/ \
-                        (cal_tensor.reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))+1e-8)
-        # print(result_tensor[0,0,0])
-        # exit(-136)
-        return result_tensor
 
     def forward(self, input_tensor):
         '''
@@ -50,7 +24,6 @@ class Az_nn_tensor(nn.Module):
         :return: 聚合后的结果张量 [1, num_block_x, num_block_y]
         '''
         # 替换所有原地操作为安全操作
-        # 原：input_tensor[input_tensor < 0] = 0
         input_tensor = torch.where(input_tensor < 0,
                                    torch.tensor(0.0, device=input_tensor.device),
                                    input_tensor)
@@ -60,20 +33,17 @@ class Az_nn_tensor(nn.Module):
         result_tensor = torch.exp(result_tensor)
 
         # 重构条件判断逻辑
-        # 原：result_tensor[input_tensor[0]>0] = 0 → 使用where替代
         mask_chm = (input_tensor[0] > 0)
         result_tensor = torch.where(mask_chm,
                                     torch.tensor(0.0, device=input_tensor.device),
                                     result_tensor)
 
-        # 原：result_tensor[result_tensor >= 1] = 0 → 使用where替代
         mask_ge1 = (result_tensor >= 1)
         result_tensor = torch.where(mask_ge1,
                                     torch.tensor(0.0, device=input_tensor.device),
                                     result_tensor)
 
         # 计算校准张量（非原地版本）
-        # 原：cal_tensor[cal_tensor == 1] = 0 → cal_tensor[cal_tensor > 0] = 1
         cal_tensor = torch.where(result_tensor > 0,
                                  torch.tensor(1.0, device=input_tensor.device),
                                  torch.tensor(0.0, device=input_tensor.device))

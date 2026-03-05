@@ -11,41 +11,6 @@ class cal_LAI(nn.Module):
         self.block_size_y=block_size_y
         self.G = g
 
-    def old_forward(self, input_tensor):
-    # def forward(self, input_tensor):
-        '''
-        计算LAI的函数
-        :param input_tensor: 需要是一个[6,n,n]的张量，0:第一个通道是CHM，1:第二个通道是PATH, 2:第三个通道是FAVD, 3:第四个通道是Edge, 4:第五个通道是TH, 5:第六个通道是Max_H
-        :return: [1,n,n]的张量，LAI
-        '''
-        num_block_x = int(input_tensor.shape[1] / self.block_size_x)
-        num_block_y = int(input_tensor.shape[2] / self.block_size_y)
-        result_output = torch.zeros([1, num_block_x, num_block_y])
-        input_tensor[input_tensor < 0] = 0
-        result_tensor = torch.zeros([3, input_tensor.shape[1], input_tensor.shape[2]])
-        result_tensor[0, :, :] = input_tensor[0, :, :]-input_tensor[4,:,:]      #PATH_Vertical_Array_Ac
-        # print(result_tensor[0, 20, 20],input_tensor[0, 20, 20],input_tensor[4, 20, 20],input_tensor[5, 20, 20],(14974 * torch.exp(-2.037*input_tensor[0,20,20])))
-        result_tensor[1, :, :] = input_tensor[0, :, :]  - input_tensor[4, :, :]       #PATH_Vertical_Array_At
-        result_tensor[2, :, :] = 1
-        result_tensor[2, :, :][input_tensor[1, :, :]!=0]=0
-        result_tensor[2, :, :][input_tensor[3, :, :] == 1] = 0
-        # return result_tensor[2]
-
-        input_tensor[0, :, :][input_tensor[0, :, :] > 0] = 1
-
-
-        result_tensor[2, :, :] = result_tensor[0, :, :]*result_tensor[2, :, :]+result_tensor[1, :, :]*(1-result_tensor[2, :, :])
-        result_tensor[2, :, :] = result_tensor[2, :, :]*input_tensor[0, :, :]*input_tensor[2, :, :]
-        # print(result_tensor[2, 1, 9])
-        # result_tensor[2, :, :][result_tensor[2, :, :]>100]=0
-
-        result_output[0, :, :] = result_tensor[2, :, :].reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))/ self.block_size_x / self.block_size_y\
-                        *(-input_tensor[3, :, :].reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))/2+input_tensor[0, :, :].reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4)))/ \
-                                 (input_tensor[0, :, :].reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))+1e-8)
-
-        # return  input_tensor[0, :, :].reshape(1, num_block_x, self.block_size_x, num_block_y, self.block_size_y).sum(dim=(2, 4))
-        # print("calLAI",result_output[0, 1, 9])
-        return result_output
 
     def forward(self, input_tensor):
         '''
@@ -101,7 +66,6 @@ class cal_LAI(nn.Module):
         # 最终结果计算
         result = (numerator / self.block_size_x / self.block_size_y) * \
                  ((-edge_agg / 2) + chm_agg) / denominator
-        # print("numerator.shape",numerator.shape)
-        # return chm_agg
+
 
         return result  # 保持输出形状[1, N, M]
