@@ -3,11 +3,15 @@ import torch.nn as nn
 
 
 class cal_P_lc(nn.Module):
-    def __init__(self, size_x, g, bl):
+    def __init__(self, size_x, g, bl, hotspot_full_sza=10.0, hotspot_end_sza=20.0):
         super(cal_P_lc, self).__init__()
+        if hotspot_full_sza < 0 or hotspot_end_sza <= hotspot_full_sza:
+            raise ValueError("hotspot angles must satisfy 0 <= hotspot_full_sza < hotspot_end_sza")
         self.size_x = size_x
         self.G = g
         self.bL = bl
+        self.hotspot_full_sza = float(hotspot_full_sza)
+        self.hotspot_end_sza = float(hotspot_end_sza)
 
 
     def forward(self, input_tensor):
@@ -22,14 +26,30 @@ class cal_P_lc(nn.Module):
 
         # 预计算三角函数
         cos_sza = torch.cos(input_tensor[1])  # [H, W]
+        safe_cos_sza = torch.clamp(cos_sza, min=1e-6)
         tan_sza = torch.tan(input_tensor[1])  # [H, W]
 
-        # 分步计算指数项（保持中间变量）
-        part1 = torch.exp(z_grid * self.G * input_tensor[0] * (-1))  # exp(-G*FAVD*z)
-        part2 = torch.exp(z_grid * self.G * input_tensor[0] * (-1) * cos_sza * 0.5)
+        # 低太阳天顶角采用修正后的太阳路径衰减，10°–20° 平滑过渡到原公式。
+        optical_depth = z_grid * self.G * input_tensor[0]
+        part1 = torch.exp(-optical_depth)
+        sza_degrees = torch.rad2deg(torch.abs(input_tensor[1]))
+        transition = torch.clamp(
+            (sza_degrees - self.hotspot_full_sza)
+            / (self.hotspot_end_sza - self.hotspot_full_sza),
+            min=0.0,
+            max=1.0,
+        )
+        smoothstep = transition * transition * (3.0 - 2.0 * transition)
+        hotspot_weight = 1.0 - smoothstep
+        legacy_coefficient = 0.5 * cos_sza
+        corrected_coefficient = 1.0 / safe_cos_sza
+        effective_coefficient = legacy_coefficient + hotspot_weight * (
+            corrected_coefficient - legacy_coefficient
+        )
+        part2 = torch.exp(-optical_depth * effective_coefficient)
         part3 = torch.exp(z_grid * tan_sza / self.bL * (-1))  # exp(-z*tanθ/bL)
         part4 = torch.exp(
-            z_grid * self.G * torch.sqrt(1 / cos_sza) * input_tensor[0] * part3)  # exp(G*FAVD*z*sqrt(1/cosθ))
+            z_grid * self.G * torch.sqrt(1 / safe_cos_sza) * input_tensor[0] * part3)  # exp(G*FAVD*z*sqrt(1/cosθ))
         
         # 合并所有项
         combined = part1 * part2 * part4

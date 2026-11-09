@@ -14,6 +14,8 @@ class BRFModel(nn.Module):
         self.bandNumber = bandNumber
         self.size_x = kwargs.get("size_x", 30)  # 一个像元x方向（）包含多少个chm像元点
         self.size_y = kwargs.get("size_y", 30)  # 一个像元y方向（）包含多少个chm像元点
+        self.hotspot_full_sza = kwargs.get("hotspot_full_sza", 10.0)
+        self.hotspot_end_sza = kwargs.get("hotspot_end_sza", 20.0)
 
         self.chm_path = kwargs.get("chm_path", "input/CHM.tif")
         self.path1_path = kwargs.get("path1_path", "input/PATH1.tif")
@@ -67,7 +69,11 @@ class BRFModel(nn.Module):
 
         self.up2D=DynamicBlockUpsample2D(self.size_x)
         self.single_k_nn = Single_k_nn_0303(self.size_x, self.size_y)
-        self.BRF_nn = BRF_nn(self.size_x, self.size_y,0.5,self.dL,self.bandNumber)
+        self.BRF_nn = BRF_nn(
+            self.size_x, self.size_y, 0.5, self.dL, self.bandNumber,
+            hotspot_full_sza=self.hotspot_full_sza,
+            hotspot_end_sza=self.hotspot_end_sza,
+        )
 
         self.Edge_nn = nn.Conv2d(1, 1, kernel_size=(3, 3), stride=1)
         self.Edge_nn.weight = torch.nn.Parameter(torch.tensor([[[[-1., -1, -1],

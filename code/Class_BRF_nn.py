@@ -5,14 +5,21 @@ from Class_MultiBRF import MultiBRF_nn_mulband
 
 
 class BRF_nn(nn.Module):
-    def __init__(self,size_x,size_y,g,bL,bandnum):
+    def __init__(
+        self, size_x, size_y, g, bL, bandnum,
+        hotspot_full_sza=10.0, hotspot_end_sza=20.0,
+    ):
         super(BRF_nn, self).__init__()
         self.size_x=size_x
         self.size_y=size_y
         self.G=g
         self.bL=bL
         self.bandnum=bandnum
-        self.SingleBRF_nn=SingleBRF_nn_mulband(size_x,size_y,g,bL,bandnum)
+        self.SingleBRF_nn=SingleBRF_nn_mulband(
+            size_x, size_y, g, bL, bandnum,
+            hotspot_full_sza=hotspot_full_sza,
+            hotspot_end_sza=hotspot_end_sza,
+        )
         self.MultiBRF_nn=MultiBRF_nn_mulband(size_x,g,bandnum)
 
     def forward(self,input_tensor):

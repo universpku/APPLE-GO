@@ -8,13 +8,20 @@ class SingleBRF_nn_mulband(nn.Module):
     '''
     这个函数与原有函数的区别在于，这个函数是多波段的，而原有函数是单波段的
     '''
-    def __init__(self,size_x,size_y,g,bL,bandnum):
+    def __init__(
+        self, size_x, size_y, g, bL, bandnum,
+        hotspot_full_sza=10.0, hotspot_end_sza=20.0,
+    ):
         super(SingleBRF_nn_mulband, self).__init__()
         self.G=g
         self.size_x=size_x
         self.bandnum=bandnum
         self.SF_nn=cal_SF_mulband(size_x,size_y,bandnum)
-        self.P_lc_nn=cal_P_lc(size_x,g,bL)
+        self.P_lc_nn=cal_P_lc(
+            size_x, g, bL,
+            hotspot_full_sza=hotspot_full_sza,
+            hotspot_end_sza=hotspot_end_sza,
+        )
         self.P_lt_nn=cal_P_lt(size_x,g)
 
     def forward(self, input_tensor):
