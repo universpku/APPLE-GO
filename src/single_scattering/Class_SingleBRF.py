@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from Class_cal_SF import cal_SF_mulband
-from Class_p_lc import cal_P_lc
-from Class_p_lt import cal_P_lt
+from .Class_cal_SF import cal_SF_mulband
+from .Class_p_lc import cal_P_lc
+from .Class_p_lt import cal_P_lt
 
 class SingleBRF_nn_mulband(nn.Module):
     '''

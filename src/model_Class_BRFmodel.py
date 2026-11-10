@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
 
-from Class_Upsample import DynamicBlockUpsample2D
-from read_and_write_tiff import read_tiff
-from Class_Single_k import Single_k_nn_0303
-from Class_BRF_nn import BRF_nn
-from Class_cal_k import cal_k
+from .preprocessing.Class_Upsample import DynamicBlockUpsample2D
+from .io.read_and_write_tiff import read_tiff
+from .geometry.Class_Single_k import Single_k_nn_0303
+from .multiple_scattering.Class_BRF_nn import BRF_nn
+from .geometry.Class_cal_k import cal_k
 
 
 class BRFModel(nn.Module):

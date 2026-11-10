@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 
-from Class_Ag_nn import Ag_nn_tensor
-from Class_Az_nn import Az_nn_tensor
-from Class_Ac_nn import Ac_nn_tensor
-from Class_At_nn import At_nn_tensor
-from Class_Ac_Ag_big import Ac_Ag_big_nn_tensor
-from Class_cal_k import cal_k
-from Class_cal_LAI import cal_LAI
+from .Class_Ag_nn import Ag_nn_tensor
+from .Class_Az_nn import Az_nn_tensor
+from .Class_Ac_nn import Ac_nn_tensor
+from .Class_At_nn import At_nn_tensor
+from .Class_Ac_Ag_big import Ac_Ag_big_nn_tensor
+from .Class_cal_k import cal_k
+from .Class_cal_LAI import cal_LAI
 
 class Single_k_nn_0303(nn.Module):
     '''

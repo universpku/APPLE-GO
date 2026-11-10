@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from Class_SingleBRF import SingleBRF_nn_mulband
-from Class_MultiBRF import MultiBRF_nn_mulband
+from ..single_scattering.Class_SingleBRF import SingleBRF_nn_mulband
+from .Class_MultiBRF import MultiBRF_nn_mulband
 
 
 class BRF_nn(nn.Module):

@@ -13,29 +13,21 @@ APPLE-GO models the bidirectional reflectance factor (BRF) of forest canopies at
 ```text
 APPLE-GO/
 ├── README.md
-└── code/
+└── src/
     ├── model_Class_BRFmodel.py   # BRFModel entry point and input assembly
-    ├── Class_Single_k.py         # Geometric quantities for single scattering
-    ├── Class_Ac_Ag_big.py        # Geometry over the neighboring area
-    ├── Class_Ac_nn.py            # Canopy geometry
-    ├── Class_Ag_nn.py            # Ground geometry
-    ├── Class_At_nn.py            # Crown-top geometry
-    ├── Class_Az_nn.py            # Vertical geometry
-    ├── Class_Edge_nn.py          # Canopy edge detection
-    ├── Class_cal_k.py            # Geometric coefficient assembly
-    ├── Class_cal_LAI.py          # LAI calculation
-    ├── Class_cal_SF.py           # Leaf scattering factor
-    ├── Class_p_lc.py            # Canopy-leaf probability and low-SZA correction
-    ├── Class_p_lt.py            # Crown-top probability
-    ├── Class_SingleBRF.py       # Single-scattering BRF
-    ├── Class_MultiBRF.py        # Multiple-scattering BRF
-    ├── Class_BRF_nn.py          # Single- and multiple-scattering combination
-    ├── Class_Upsample.py        # Parameter upsampling
-    └── read_and_write_tiff.py   # GeoTIFF I/O
+    ├── geometry/                # Canopy geometry, LAI, and geometric coefficients
+    ├── single_scattering/       # Single-scattering BRF and its factors
+    ├── multiple_scattering/     # Original eight-neighbor BRF calculation
+    │   ├── Class_BRF_nn.py
+    │   └── Class_MultiBRF.py
+    ├── preprocessing/           # Parameter upsampling
+    └── io/                      # GeoTIFF I/O
 ```
 
 ## Inputs and output
 
 By default, `BRFModel` reads `input/CHM.tif`, `input/PATH1.tif`, and `input/PATH2.tif`. Input rasters and a complete batch-running script are not included. The code requires PyTorch, NumPy, and the GDAL Python bindings (`osgeo`).
+
+Run from the repository root and import the model with `from src.model_Class_BRFmodel import BRFModel`. The main model continues to use the original eight-neighbor multiple-scattering calculation.
 
 `BRFModel.forward()` returns a tensor shaped `[bands, rows, columns]` containing the total BRF with adjacent-pixel effects. The current implementation also includes a configurable low solar zenith angle (SZA) hotspot correction in `Class_p_lc.py`: it is fully applied at SZA ≤ 10°, transitions smoothly between 10° and 20°, and uses the original expression at SZA ≥ 20°. Set `hotspot_full_sza` and `hotspot_end_sza` to change these thresholds.
